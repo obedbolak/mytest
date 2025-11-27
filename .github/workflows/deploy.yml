@@ -50,6 +50,12 @@ jobs:
               echo "Node.js not found in PATH. Install Node on the server or adjust PATH."
               exit 1
             fi
+            
+            # Check PM2 availability and install if missing
+            if ! command -v pm2 >/dev/null 2>&1; then
+              echo "PM2 not found, installing globally..."
+              npm install -g pm2
+            fi
 
             # Install dependencies (use npm ci for reproducible installs)
             npm ci
