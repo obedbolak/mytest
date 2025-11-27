@@ -38,6 +38,13 @@ jobs:
               cd "$APP_DIR"
             fi
 
+            # Load Node.js into PATH (adjust path if needed)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
+            # Alternative: Add common Node.js installation paths
+            export PATH="/usr/local/bin:/usr/bin:$HOME/.nvm/versions/node/$(ls $HOME/.nvm/versions/node | tail -1)/bin:$PATH"
+            
             # Check Node availability
             if ! command -v node >/dev/null 2>&1; then
               echo "Node.js not found in PATH. Install Node on the server or adjust PATH."
