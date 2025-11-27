@@ -1,12 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { greetUser, calculateSum } from '@/lib/server-actions';
+import { greetUser, calculateSum, fetchProducts } from '@/lib/server-actions';
+
+interface Product {
+  id: number;
+  title: string;
+  description: string;
+}
 
 export function DemoSection() {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [response, setResponse] = useState<string>('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showProducts, setShowProducts] = useState(false);
 
   const handleServerAction = async (type: 'greet' | 'calculate') => {
     setLoading(true);
@@ -49,6 +57,22 @@ export function DemoSection() {
       setResponse('Error occurred');
     }
     
+    setLoading(false);
+  };
+
+  const handleFetchProducts = async () => {
+    setLoading(true);
+    try {
+      const result = await fetchProducts();
+      if (result.success) {
+        setProducts(result.products);
+        setShowProducts(true);
+      } else {
+        setResponse('Error fetching products');
+      }
+    } catch (error) {
+      setResponse('Error occurred');
+    }
     setLoading(false);
   };
 
@@ -134,6 +158,42 @@ export function DemoSection() {
           <p className="text-gray-700 dark:text-gray-300">{response}</p>
         </div>
       )}
+
+      {/* Products Section */}
+      <div className="bg-purple-50 dark:bg-purple-950 rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-4 text-purple-900 dark:text-purple-100">
+          Products from API
+        </h2>
+        
+        <button
+          onClick={handleFetchProducts}
+          disabled={loading}
+          className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 mb-4"
+        >
+          {loading ? 'Loading...' : 'Fetch Products'}
+        </button>
+
+        {showProducts && products.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white dark:bg-purple-900 rounded-lg p-4 border border-purple-200 dark:border-purple-700"
+              >
+                <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                  Product #{product.id}
+                </h3>
+                <p className="text-sm text-purple-700 dark:text-purple-300 line-clamp-3">
+                  {product.title}
+                </p>
+                <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 line-clamp-2">
+                  {product.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
