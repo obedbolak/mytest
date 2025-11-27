@@ -19,29 +19,47 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
-            # Navigate to your app directory
-            cd /root/mytest
-            
-            # Pull latest changes
-            git pull origin main
-            
-            # Remove node_modules and package-lock if there are issues (optional)
-            # rm -rf node_modules package-lock.json
-            
-            # Install dependencies
-            npm install
-            
-            # Build the Next.js app using npx
-            npx next build
-            
-            # Restart PM2 process on port 3001
-            pm2 delete mytest 2>/dev/null || true
-            PORT=3001 pm2 start npm --name "mytest" -- start
-            
-            # Save PM2 configuration
-            pm2 save
-            
-            echo "Deployment completed successfully on port 3001!"
+            set -e
+
+            APP_DIR="/root/mytest"
+            REPO_SSH="git@github.com:obedbolak/mytest.git" # adjust to your repo SSH URL
+            BRANCH="main"
+
+            # If the repo already exists, fetch and reset to the remote branch. Otherwise clone.
+            if [ -d "$APP_DIR/.git" ]; then
+              cd "$APP_DIR"
+              git fetch --all --prune
+              git reset --hard "origin/$BRANCH"
+            else
+              git clone --depth 1 -b "$BRANCH" "$REPO_SSH" "$APP_DIR"
+              cd "$APP_DIR"
+            fi
+
+            # Check Node availability
+            if ! command -v node >/dev/null 2>&1; then
+              echo "Node.js not found in PATH. Install Node on the server or adjust PATH."
+              exit 1
+            fi
+
+            # Install dependencies (use npm ci for reproducible installs)
+            npm ci
+
+            # Build using package.json script
+            npm run build
+
+            # Ensure the app runs on PORT 3003
+            export PORT=3003
+
+            # Restart or start the app with pm2
+            if command -v pm2 >/dev/null 2>&1; then
+              pm2 describe mytest >/dev/null 2>&1 && pm2 restart mytest || pm2 start npm --name "mytest" -- start
+              pm2 save
+            else
+              echo "pm2 not found; please install 'pm2' globally: npm i -g pm2"
+              exit 1
+            fi
+
+            echo "Deployment completed successfully on port 3003!"
