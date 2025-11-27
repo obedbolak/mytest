@@ -25,7 +25,7 @@ jobs:
             set -e
 
             APP_DIR="/root/mytest"
-            REPO_SSH="git@github.com:obedbolak/mytest.git" # adjust to your repo SSH URL
+            REPO_SSH="git@github.com:obedbolak/mytest.git"
             BRANCH="main"
 
             # If the repo already exists, fetch and reset to the remote branch. Otherwise clone.
@@ -55,7 +55,7 @@ jobs:
 
             # Restart or start the app with pm2
             if command -v pm2 >/dev/null 2>&1; then
-              pm2 describe mytest >/dev/null 2>&1 && pm2 restart mytest || pm2 start npm --name "mytest" -- start
+              pm2 describe mytest >/dev/null 2>&1 && pm2 restart mytest --update-env || PORT=3003 pm2 start npm --name "mytest" -- start
               pm2 save
             else
               echo "pm2 not found; please install 'pm2' globally: npm i -g pm2"
